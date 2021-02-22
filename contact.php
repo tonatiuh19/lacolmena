@@ -1,119 +1,88 @@
-<?php if (!isset($_SESSION)) session_start();
+<?php
+//Load Composer's autoloader
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
-if(!$_POST) exit();
+require_once('admin/mailer/vendor/autoload.php');
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-		if (!defined("PHP_EOL")) define("PHP_EOL", "\r\n");
+	$name     	= test_input($_POST['name']);
+	$email    	= test_input($_POST['email']);
+	$subject  	= test_input($_POST['subject']);
+	$comments 	= test_input($_POST['comments']);
 
-		$name     	= $_POST['name'];
-        $email    	= $_POST['email'];
-        $phone   	= $_POST['phone'];
-        $website   	= $_POST['website'];
-        $subject  	= $_POST['subject'];
-        $comments 	= $_POST['comments'];
-        $error		= '';
+	$mail = new PHPMailer();
 
-	    if (isset($_POST['verify'])) :
-	    	$posted_verify   = $_POST['verify'];
-	   		$posted_verify   = md5($posted_verify);
-	   	else :
-	   		$posted_verify = '';
-	   	endif;
+	try {
+	
+		$mail->SMTPDebug = false;                              //Send using SMTP
+		$mail->Host       = 'mail.tonatiuhgomez.com';                     //Set the SMTP server to send through
+		$mail->SMTPAuth   = true;                                   //Enable SMTP authentication
+		$mail->Username   = 'lacolmena@tonatiuhgomez.com';                     //SMTP username
+		$mail->Password   = 'Lacolmena123';                               //SMTP password
+		$mail->SMTPSecure = 'ssl';                                  // Enable TLS encryption, `ssl` also accepted
+		$mail->Port       = 469;                                   // TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
+		$mail->CharSet = 'UTF-8';                                  //TCP port to connect to, use 465 for `PHPMailer::ENCRYPTION_SMTPS` above
+	
 
-		// Important Variables
-		$session_verify = $_SESSION['verify'];
-
-		if (empty($session_verify)) $session_verify = $_COOKIE['verify'];
-
-		if(trim($name) == '') {
-        	echo '<div class="error_message">¡Atención! Escribe tu nombre.</div>';
-			exit();
-        } else if(trim($email) == '') {
-        	echo '<div class="error_message">¡Atención! Escribe una dirección de correo válida.</div>';
-			exit();
-        } else if(!isEmail($email)) {
-        	echo '<div class="error_message">¡Atención! Escribiste una dirección inválida, intenta de nuevo por favor.</div>';
-			exit();
-        }
-
-        if(trim($subject) == '') {
-        	echo '<div class="error_message">¡Atención! Por favor escribe un mensaje.</div>';
-			exit();
-        } else if(trim($comments) == '') {
-        	echo '<div class="error_message">¡Atención! Por favor escribe un mensaje.</div>';
-			exit();
-        } else if($posted_verify == '') {
-	    	echo '<div class="error_message">¡Atención! Por favor escribe el código de verificación.</div>';
-			exit();
-	    } else if($session_verify != $posted_verify) {
-	    	echo '<div class="error_message">¡Atención! El código de verificación es incorrecto.</div>';
-			exit();
-	    }
-
-        if($error == '') {
-
-			if(get_magic_quotes_gpc()) {
-            	$comments = stripslashes($comments);
-            }
-
-
-         // Configuration option.
-		 // Enter the email address that you want to emails to be sent to.
-		 // Example $address = "joe.doe@yourdomain.com";
-
-         //$address = "example@themeforest.net";
-         $address = "ceraslacolmena@gmail.com";
-
-
-         // Configuration option.
-         // i.e. The standard subject will appear as, "You've been contacted by John Doe."
-
-         // Example, $e_subject = '$name . ' has contacted you via Your Website.';
-
-         $e_subject = 'Ha sido contactado por ' . $name . '.';
-
-
-         // Configuration option.
-		 // You can change this if you feel that you need to.
-		 // Developers, you may wish to add more fields to the form, in which case you must be sure to add them here.
-
-		 $e_body = "Ha sido contactado por $name interesado en: $subject, y su mensaje adicional es:" . PHP_EOL . PHP_EOL;
-		 $e_content = "\"$comments\"" . PHP_EOL . PHP_EOL;
-		 $e_reply = "Su correo electrónico, $email";
-
-		 if ($phone) $e_reply .= " Teléfono: $phone.";
-
-		 if ($website) $e_reply .= " Sitio Web.";
-
-         $msg = wordwrap($e_body . $e_content . $e_reply,70);
-
-         $headers = "From: $email" . PHP_EOL;
-		 $headers .= "Reply-To: $email" . PHP_EOL;
-		 $headers .= "MIME-Version: 1.0" . PHP_EOL;
-		 $headers .= "Content-type: text/plain; charset=utf-8" . PHP_EOL;
-		 $headers .= "Content-Transfer-Encoding: quoted-printable" . PHP_EOL;
-
-         if(mail($address, $e_subject, $msg, $headers)) {
-
-
-		 // Email has sent successfully, echo a success page.
-
-		 echo "<fieldset>";
-		 echo "<div id='success_page' style='min-height:100px; background:red; display:block;'>";
-		 echo "<h1>Su mensaje ha sido enviado exitosamente.</h1>";
-		 echo "<p>Gracias <strong>$name</strong>, estaremos en contacto usted en breve.</p>";
-		 echo "</div>";
-		 echo "</fieldset>";
-
-		 } else {
-
-		 echo 'ERROR!';
-
-		 }
-
+		//Recipients
+		$mail->setFrom('lacolmena@tonatiuhgomez.com', 'Robot La Colmena');
+		$mail->addAddress('ceraslacolmena@gmail.com', 'Ceras la colmena');     //Add a recipient
+		//$mail->setLanguage('es', '../admin/mailer/vendor/phpmailer/phpmailer/language');
+		//Content
+		$mail->isHTML(true);                                  //Set email format to HTML
+		$mail->Subject = $subject;
+		$mail->Body    = 'Hola admin! <br> <p>Tienes un mensaje nuevo con los siguientes parametros: </p> Nombre de usuario: '.$name.' <br> Correo: '.$email.'<br> Asunto: '.$subject.' <br> Comentarios: '.$comments.' <p>Sauludos. <br>Robot La colmena.</p>';
+		$mail->AltBody = 'Hola admin! <br> <p>Tienes un mensaje nuevo con los siguientes parametros: </p> Nombre de usuario: '.$name.' <br> Correo: '.$email.'<br> Asunto: '.$subject.' <br> Comentarios: '.$comments.' <p>Sauludos. <br>Robot La colmena.</p>';
+	
+		$mail->send();     
+		echo ("<SCRIPT LANGUAGE='JavaScript'>
+		$('#exampleModalCenter').modal('show');
+		</SCRIPT>");
+	} catch (Exception $e) {
+		echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
 	}
 
-function isEmail($email) { // Email address verification, do not edit.
+}else{
+    echo ("<SCRIPT LANGUAGE='JavaScript'>
+        window.location.href='../';
+        </SCRIPT>");
+}
 
-return(preg_match("/^[-_.[:alnum:]]+@((([[:alnum:]]|[[:alnum:]][[:alnum:]-]*[[:alnum:]])\.)+(ad|ae|aero|af|ag|ai|al|am|an|ao|aq|ar|arpa|as|at|au|aw|az|ba|bb|bd|be|bf|bg|bh|bi|biz|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|ci|ck|cl|cm|cn|co|com|coop|cr|cs|cu|cv|cx|cy|cz|de|dj|dk|dm|do|dz|ec|edu|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gh|gi|gl|gm|gn|gov|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|in|info|int|io|iq|ir|is|it|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mil|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|museum|mv|mw|mx|my|mz|na|name|nc|ne|net|nf|ng|ni|nl|no|np|nr|nt|nu|nz|om|org|pa|pe|pf|pg|ph|pk|pl|pm|pn|pr|pro|ps|pt|pw|py|qa|re|ro|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|st|su|sv|sy|sz|tc|td|tf|tg|th|tj|tk|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|um|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|yu|za|zm|zw)$|(([0-9][0-9]?|[0-1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])\.){3}([0-9][0-9]?|[0-1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5]))$/i",$email));
+function test_input($data) {
+	$data = trim($data);
+	$data = stripslashes($data);
+	$data = htmlspecialchars($data);
+	return $data;
+}
 
-} ?>
+?>
+<style>
+	body {
+		color: blue;
+	}
+</style>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+<div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-body text-center">
+     
+        <h5 class="modal-title w-100" id="exampleModalLongTitle"><i class="fas fa-glass-cheers fa-2x"></i><br>Tu mensaje ha sido enviado</h5>
+        <p>El equipo de La Colmena se pondra en contacto contigo a la brevedad.</p>
+        <a href="http://lacolmena.com.mx/" class="btn btn-success">Regresar</a>
+      
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
+<script>
+    $('#exampleModalCenter').modal({
+        backdrop: 'static',
+        keyboard: false
+    });
+</script>
